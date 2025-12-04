@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>MINAMOTO YEARS — Адвент календарь</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: 
+        radial-gradient(ellipse at top, #0b1a2a 0%, #051016 30%, #000000 80%),
+        radial-gradient(ellipse at 80% 20%, rgba(30, 60, 114, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(120, 30, 60, 0.2) 0%, transparent 50%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      max-height: 920px;
+      background: 
+        radial-gradient(ellipse at top, rgba(20, 70, 100, 0.4) 0%, rgba(5, 15, 30, 0.95) 60%, #000000 100%),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0,200,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.9),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 0 100px rgba(0, 100, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .animated-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(100px, 100px) rotate(360deg); }
+    }
+
+    /* ---------- HEADER ---------- */
+    .header {
+      padding: 20px 22px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: 
+        linear-gradient(180deg, rgba(10, 40, 70, 0.9) 0%, rgba(5, 20, 40, 0.7) 100%),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="10"><path d="M0,5 Q25,0 50,5 T100,5" stroke="rgba(0,150,255,0.2)" fill="none" stroke-width="1"/></svg>');
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid rgba(100, 200, 255, 0.15);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.5), transparent);
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .app-name {
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 20%, #a5f3fc 40%, #38bdf8 60%, #0ea5e9 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+      position: relative;
+      padding-left: 8px;
+    }
+
+    .app-name::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 70%;
+      background: linear-gradient(to bottom, #38bdf8, #0ea5e9);
+      border-radius: 2px;
+    }
+
+    .app-subtitle {
+      font-size: 13px;
+      color: #bae6fd;
+      opacity: 0.9;
+      font-weight: 300;
+      letter-spacing: 0.03em;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .minamoto-badge {
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b, #ea580c);
+      color: #451a03;
+      font-weight: 800;
+      text-transform: uppercase;
+      box-shadow: 
+        0 0 20px rgba(245, 158, 11, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .minamoto-badge::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(rgba(255,255,255,0.1), transparent);
+      transform: rotate(30deg);
+      z-index: -1;
+    }
+
+    .dots {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #7dd3fc;
+      box-shadow: 0 6px 0 #7dd3fc, 0 12px 0 #7dd3fc;
+      opacity: 0.7;
+    }
+
+    /* ---------- ПРОГРЕСС ---------- */
+    .progress-bar-wrapper {
+      padding: 0 22px 18px;
+      background: linear-gradient(180deg, rgba(10, 40, 70, 0.8) 0%, rgba(5, 20, 40, 0.6) 100%);
+      border-bottom: 1px solid rgba(20, 100, 150, 0.3);
+      position: relative;
+      z-index: 5;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #bae6fd;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 10px;
+      background: rgba(5, 30, 50, 0.7);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(100, 200, 255, 0.1);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, 
+        #00ffaa 0%, 
+        #00e5ff 25%, 
+        #00b3ff 50%, 
+        #ffd700 75%, 
+        #ff6b00 100%);
+      background-size: 200% 100%;
+      animation: shimmer 3s infinite linear;
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 
+        0 0 15px rgba(0, 255, 170, 0.5),
+        inset 0 0 10px rgba(255, 255, 255, 0.2);
+      position: relative;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ---------- MAIN CONTENT / PAGES ---------- */
+    .content {
+      flex: 1;
+      padding: 18px 15px 80px;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .content::-webkit-scrollbar-track {
+      background: rgba(0, 20, 40, 0.3);
+      border-radius: 10px;
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: linear-gradient(to bottom, #38bdf8, #0ea5e9);
+      border-radius: 10px;
+    }
+
+    .page {
+      display: none;
+      min-height: 100%;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page.active-page {
+      display: block;
+    }
+
+    .calendar-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 4px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #f8fafc;
+      padding: 12px 16px;
+      background: rgba(10, 40, 70, 0.4);
+      border-radius: 16px;
+      border: 1px solid rgba(100, 200, 255, 0.15);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .calendar-title span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #bae6fd;
+      opacity: 0.9;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 120px;
+      gap: 12px;
+    }
+
+    .day-card {
+      position: relative;
+      border-radius: 20px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      background-size: 200%;
+      background-position: 0 0;
+      box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+
+    .day-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.2) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0.3) 0%, transparent 60%);
+      opacity: 0.6;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .day-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .day-card:hover::after {
+      opacity: 1;
+    }
+
+    .day-emoji-bg {
+      position: absolute;
+      font-size: 70px;
+      opacity: 0.15;
+      right: -10px;
+      bottom: -15px;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(1px);
+    }
+
+    .day-number {
+      position: relative;
+      font-size: 36px;
+      font-weight: 900;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+      background: linear-gradient(135deg, #fff 30%, #e2e8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .day-icon {
+      position: relative;
+      align-self: flex-start;
+      font-size: 28px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+      z-index: 2;
+      transition: transform 0.3s;
+    }
+
+    .day-label {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .day-label-pill {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+      color: #0c4a6e;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .day-label-locked {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      color: #cbd5e1;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .day-label-tomorrow {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .day-label-expired {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .day-check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #00e67a 30%, #059669 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 4px 15px rgba(5, 150, 105, 0.8),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+      font-size: 16px;
+      z-index: 3;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .day-check span {
+      color: white;
+      font-weight: bold;
+      transform: translateY(-1px);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .day-card.locked,
+    .day-card.expired {
+      filter: grayscale(0.5) brightness(0.7);
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+
+    .day-card.locked .day-number,
+    .day-card.expired .day-number {
+      opacity: 0.7;
+    }
+
+    .day-card.locked .day-icon,
+    .day-card.expired .day-icon {
+      opacity: 0.6;
+    }
+
+    .day-card.available {
+      animation: subtleGlow 3s infinite alternate;
+    }
+
+    @keyframes subtleGlow {
+      from { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+      to { box-shadow: 0 8px 25px rgba(0, 100, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+    }
+
+    .day-card.available:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        0 15px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 2px rgba(100, 200, 255, 0.3);
+    }
+
+    .day-card.available:active {
+      transform: translateY(-2px) scale(0.98);
+      transition: transform 0.1s;
+    }
+
+    .day-card.completed {
+      box-shadow: 
+        0 8px 25px rgba(0, 200, 150, 0.3),
+        inset 0 0 0 2px rgba(0, 255, 170, 0.5);
+    }
+
+    /* Цветовые темы карточек */
+    .bg-yellow {
+      background-image: linear-gradient(145deg, #ffd700 0%, #ffb347 100%);
+    }
+
+    .bg-red {
+      background-image: linear-gradient(145deg, #ff6b6b 0%, #ff4757 100%);
+    }
+
+    .bg-green {
+      background-image: linear-gradient(145deg, #20e680 0%, #0ea5e9 100%);
+    }
+
+    .bg-blue {
+      background-image: linear-gradient(145deg, #3b82f6 0%, #06b6d4 100%);
+    }
+
+    .bg-ginger {
+      background-image: linear-gradient(145deg, #fb923c 0%, #f97316 100%);
+    }
+
+    .bg-cyan {
+      background-image: linear-gradient(145deg, #22d3ee 0%, #0d9488 100%);
+    }
+
+    .bg-gold {
+      background-image: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
+    }
+
+    .bg-purple {
+      background-image: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    /* ---------- МОИ ПРИЗЫ ---------- */
+    .prizes-header {
+      margin: 10px 4px 20px;
+      padding: 16px;
+      background: rgba(10, 40, 70, 0.4);
+      border-radius: 16px;
+      border: 1px solid rgba(100, 200, 255, 0.15);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .prizes-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #fff 30%, #7dd3fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .prizes-subtitle {
+      font-size: 13px;
+      color: #bae6fd;
+      font-weight: 300;
+    }
+
+    .prizes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .prize-card {
+      border-radius: 20px;
+      padding: 16px;
+      background: 
+        linear-gradient(145deg, rgba(15, 50, 90, 0.8), rgba(5, 25, 50, 0.9)),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.03"><path d="M0,0 L100,100 M100,0 L0,100" stroke="white" stroke-width="1"/></svg>');
+      border: 1px solid rgba(100, 200, 255, 0.3);
+      box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .prize-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 15px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(100, 200, 255, 0.4);
+    }
+
+    .prize-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      background: radial-gradient(circle at 20% 0, #ffffff 0%, #22c55e 40%, #0f766e 100%);
+      box-shadow: 
+        0 0 25px rgba(34, 197, 94, 0.7),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .prize-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .prize-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #f1f5f9;
+    }
+
+    .prize-meta {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prize-meta i {
+      font-size: 11px;
+    }
+
+    .prize-btn {
+      border-radius: 20px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #00ffc3, #00e1ff, #00a2ff);
+      color: #002732;
+      box-shadow: 0 6px 20px rgba(0, 255, 191, 0.5);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .prize-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(rgba(255,255,255,0.1), transparent);
+      transform: rotate(30deg);
+    }
+
+    .prize-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 191, 0.7);
+    }
+
+    .prize-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(0, 255, 191, 0.5);
+    }
+
+    .prizes-empty {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.6;
+      padding: 30px;
+      background: rgba(15, 23, 42, 0.3);
+      border-radius: 16px;
+      border: 1px dashed rgba(100, 200, 255, 0.2);
+    }
+
+    .prizes-empty i {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* ---------- BOTTOM NAV (2 вкладки) ---------- */
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 16px 20px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 30%, #000 100%);
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .bottom-nav-inner {
+      background: rgba(15, 40, 70, 0.9);
+      border-radius: 24px;
+      padding: 8px;
+      display: flex;
+      gap: 8px;
+      box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(100, 200, 255, 0.1);
+      backdrop-filter: blur(10px);
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .nav-item {
+      flex: 1;
+      min-width: 0;
+      border-radius: 20px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #bae6fd;
+      opacity: 0.9;
+      cursor: pointer;
+      gap: 10px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .nav-item-icon {
+      font-size: 18px;
+      line-height: 1;
+      transition: transform 0.3s;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #06b6d4 100%);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 
+        0 5px 20px rgba(14, 165, 233, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      opacity: 1;
+    }
+
+    .nav-item.active .nav-item-icon {
+      transform: scale(1.1);
+    }
+
+    .nav-item:not(.active):hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+    }
+
+    .nav-item:not(.active):active {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* ---------- MODAL ---------- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 5, 15, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 90%;
+      max-width: 380px;
+      background: 
+        linear-gradient(180deg, #0a2642 0%, #051a2d 100%),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.03"><circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="1"/></svg>');
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      border: 1px solid rgba(100, 200, 255, 0.3);
+      animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff 30%, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .modal-date {
+      font-size: 13px;
+      color: #7dd3fc;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-date i {
+      font-size: 12px;
+    }
+
+    .modal-body {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #e2e8f0;
+      padding: 16px;
+      background: rgba(5, 25, 50, 0.5);
+      border-radius: 16px;
+      border: 1px solid rgba(100, 200, 255, 0.1);
+    }
+
+    .reward-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(0, 255, 164, 0.2), rgba(0, 200, 255, 0.2));
+      border: 1px solid rgba(0, 255, 164, 0.5);
+      font-size: 14px;
+      margin-top: 12px;
+      box-shadow: 0 4px 15px rgba(0, 255, 164, 0.2);
+    }
+
+    .reward-pill span {
+      font-weight: 700;
+      color: #92ffd2;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      border-radius: 20px;
+      border: none;
+      padding: 14px 20px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(rgba(255,255,255,0.1), transparent);
+      transform: rotate(30deg);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00ffc3, #00e1ff, #00a2ff);
+      color: #002732;
+      box-shadow: 0 6px 25px rgba(0, 255, 191, 0.6);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 255, 191, 0.8);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.8), rgba(30, 41, 59, 0.9));
+      color: #c7f7ff;
+      border: 1px solid rgba(176, 234, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #e4f9ff;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      z-index: 2;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: rotate(90deg);
+    }
+
+    .modal-close:active {
+      transform: scale(0.9) rotate(90deg);
+    }
+
+    /* Анимация снежинок */
+    .snowflakes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .snowflake {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.8;
+      filter: blur(1px);
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      to { transform: translateY(100vh) rotate(360deg); }
+    }
+
+    /* Информация о текущей дате */
+    .current-date-info {
+      text-align: center;
+      margin: 10px 4px 15px;
+      padding: 10px;
+      background: rgba(5, 25, 50, 0.3);
+      border-radius: 12px;
+      font-size: 12px;
+      color: #7dd3fc;
+      border: 1px solid rgba(100, 200, 255, 0.1);
+    }
+
+    @media (max-height: 700px) {
+      .app {
+        border-radius: 0;
+        max-height: none;
+      }
+      .calendar-grid {
+        grid-auto-rows: 100px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .calendar-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .day-card {
+        padding: 12px;
+      }
+      .day-number {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Анимированный фон -->
+  <div class="animated-bg" id="animated-bg"></div>
+  
+  <!-- Снежинки -->
+  <div class="snowflakes" id="snowflakes"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-title">
+      <div class="app-name">MINAMOTO YEARS</div>
+      <div class="app-subtitle">Новогодний адвент-календарь</div>
+    </div>
+    <div class="header-right">
+      <div class="minamoto-badge">Gift Fest</div>
+      <div class="dots"></div>
+    </div>
+  </header>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrapper">
+    <div class="progress-label">
+      <span>Открыто: <span id="progress-current">0</span>/31</span>
+      <span id="progress-percent">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT: 2 страницы -->
+  <main class="content">
+    <!-- Страница Адвента -->
+    <section id="page-advent" class="page active-page">
+      <div class="calendar-title">
+        <span>📅 Адвент календарь</span>
+        <span>Открывай по одному подарку в день</span>
+      </div>
+      <div class="current-date-info" id="current-date-info">
+        Сегодня: <span id="today-date"></span> • Можно открыть дни до: <span id="available-until"></span>
+      </div>
+      <div id="calendar" class="calendar-grid"></div>
+    </section>
+
+    <!-- Страница "Мои призы" -->
+    <section id="page-prizes" class="page">
+      <div class="prizes-header">
+        <div class="prizes-title">🎁 Мои призы</div>
+        <div class="prizes-subtitle">Забирай подарки через Telegram-бота</div>
+      </div>
+      <div id="prizes-list" class="prizes-list"></div>
+      <div id="prizes-empty" class="prizes-empty">
+        <i class="fas fa-gift"></i><br>
+        Пока что у тебя нет активированных призов.<br/>
+        Открывай дни адвента и забирай подарки!
+      </div>
+    </section>
+  </main>
+
+  <!-- BOTTOM NAV (2 вкладки) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="nav-item active" data-page="advent">
+        <div class="nav-item-icon">📆</div>
+        Адвент
+      </div>
+      <div class="nav-item" data-page="prizes">
+        <div class="nav-item-icon">🎁</div>
+        Мои призы
+      </div>
+    </div>
+  </nav>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modal-close">&times;</button>
+    <div class="modal-title" id="modal-title">День 1</div>
+    <div class="modal-date" id="modal-date">
+      <i class="fas fa-calendar-alt"></i>
+    </div>
+    <div class="modal-body" id="modal-body">
+      Ваш подарок — тестовый.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-later">
+        <i class="fas fa-clock"></i> Позже
+      </button>
+      <button class="btn btn-primary" id="btn-claim">
+        <i class="fas fa-gift"></i> Забрать подарок
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== НАСТРОЙКИ АДВЕНТА ======
+  const DAYS_COUNT = 31;
+  const CALENDAR_YEAR = new Date().getFullYear();
+  const CALENDAR_MONTH = 11; // декабрь, 0-индекс
+  const STORAGE_KEY_PROGRESS = "minamoto_advent_progress_v3";
+  const STORAGE_KEY_CLAIMED = "minamoto_advent_claimed_v3";
+
+  // Конфиг по дням (index = номер дня)
+  const DAYS_CONFIG = {
+    1: { title: "День 1 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+    2: { title: "День 2 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+    3: { title: "День 3 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+    
+    // День 4 специально доступен сразу (исключение)
+    4: { title: "Telegram Premium", desc: "Премиум-аккаунт Telegram на 1 месяц со всеми эксклюзивными функциями.", icon: "👑", emoji: "👑" },
+
+    5: { title: "Аккаунт Telegram (1 шт.)", desc: "Один живой Telegram-аккаунт для твоих задач.", icon: "👤", emoji: "👤" },
+    6: { title: "Чек Telegram", desc: "Чек по Telegram-аккаунту.", icon: "🧾", emoji: "🧾" },
+    7: { title: "Средний чек Telegram", desc: "Расширенный чек Telegram-аккаунта.", icon: "📄", emoji: "📄" },
+    8: { title: "2 аккаунта Telegram", desc: "Два Telegram-аккаунта в комплекте.", icon: "👥", emoji: "👥" },
+    9: { title: "Удача", desc: "Сегодня без материального приза, но удача с тобой ✨", icon: "✨", emoji: "✨", empty: true },
+    10: { title: "Прокси", desc: "Прокси для работы с Telegram/ботами.", icon: "🌐", emoji: "🌐" },
+    11: { title: "Обычный чек Telegram", desc: "Базовый чек Telegram-аккаунта.", icon: "🧾", emoji: "🧾" },
+    12: { title: "Аккаунт Telegram", desc: "Дополнительный Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+    13: { title: "VPN-KEY", desc: "VPN-ключ для безопасного подключения.", icon: "🛡️", emoji: "🛡️" },
+    14: { title: "Вдохновение", desc: "Сегодня без материального приза, но праздник продолжается.", icon: "✨", emoji: "✨", empty: true },
+    15: { title: "Домен для вашего сайта", desc: "Домен для твоего будущего проекта.", icon: "🌐", emoji: "🌐" },
+    16: { title: "3 аккаунта Telegram", desc: "Сразу три Telegram-аккаунта.", icon: "👥", emoji: "👥" },
+    17: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
+    18: { title: "Средний чек", desc: "Расширенный чек аккаунта.", icon: "📄", emoji: "📄" },
+    19: { title: "MRKT-модуль", desc: "Модуль для маркетинговых задач.", icon: "🧩", emoji: "🧩" },
+    20: { title: "CryptoBot-модуль", desc: "Модуль для работы с CryptoBot.", icon: "🪙", emoji: "🪙" },
+    21: { title: "Пауза", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
+    22: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
+    23: { title: "Аккаунт Telegram", desc: "Новый Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+    24: { title: "Большой чек", desc: "Максимальный подробный чек аккаунта.", icon: "📜", emoji: "📜" },
+    25: { title: "Рождественский отдых", desc: "День отдыха от призов.", icon: "✨", emoji: "✨", empty: true },
+    26: { title: "Перерыв", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
+    27: { title: "Аккаунт Telegram", desc: "Ещё один Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+    28: { title: "Ожидание", desc: "Без материального приза, но впереди финал!", icon: "✨", emoji: "✨", empty: true },
+    29: { title: "Предвкушение", desc: "День без материального приза.", icon: "✨", emoji: "✨", empty: true },
+    30: { title: "Финальная пауза", desc: "Финальная пауза перед главным подарком.", icon: "✨", emoji: "✨", empty: true },
+    31: { title: "MIN PRO", desc: "Премиум-приз: тариф MIN PRO для твоих проектов на 1 год.", icon: "👑", emoji: "👑" }
+  };
+
+  const bgClassesPool = ["bg-yellow", "bg-red", "bg-green", "bg-blue", "bg-ginger", "bg-cyan", "bg-gold", "bg-purple"];
+
+  // ====== Состояние ======
+  let completedDays = loadJson(STORAGE_KEY_PROGRESS, []);
+  let claimedPrizes = loadJson(STORAGE_KEY_CLAIMED, []);
+  let selectedDay = null;
+
+  function loadJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      return parsed || fallback;
+    } catch (e) {
+      console.warn("Ошибка чтения", key, e);
+      return fallback;
+    }
+  }
+
+  function saveJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  // ====== Логика доступности дней (ИСПРАВЛЕНО) ======
+  function isDayAvailable(dayNumber) {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-январь, 11-декабрь
+    const currentDate = today.getDate();
+    
+    // Если не декабрь или не текущий год - все дни заблокированы
+    if (currentMonth !== CALENDAR_MONTH || currentYear !== CALENDAR_YEAR) {
+      return false;
+    }
+    
+    // День 4 доступен сразу (специальное исключение)
+    if (dayNumber === 4) return true;
+    
+    // Дни 1-3 недоступны (они lockedForever)
+    if (dayNumber <= 3) return false;
+    
+    // Остальные дни доступны только если наступила их дата
+    return dayNumber <= currentDate;
+  }
+
+  function getDayStatus(dayNumber) {
+    const cfg = DAYS_CONFIG[dayNumber] || {};
+    if (cfg.lockedForever) return "expired";
+    if (completedDays.includes(dayNumber)) return "completed";
+    return isDayAvailable(dayNumber) ? "available" : "locked";
+  }
+
+  // ====== Отображение информации о датах ======
+  function updateDateInfo() {
+    const today = new Date();
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+    
+    document.getElementById("today-date").textContent = formatter.format(today);
+    
+    const currentDate = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    if (currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR) {
+      document.getElementById("available-until").textContent = currentDate + " декабря";
+    } else if (currentMonth > CALENDAR_MONTH || currentYear > CALENDAR_YEAR) {
+      document.getElementById("available-until").textContent = "календарь завершён";
+    } else {
+      document.getElementById("available-until").textContent = "ожидаем декабря";
+    }
+  }
+
+  // ====== Анимированный фон ======
+  function createAnimatedBackground() {
+    const bg = document.getElementById('animated-bg');
+    for (let i = 0; i < 15; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'bg-particle';
+      const size = Math.random() * 100 + 50;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${Math.random() * 100}%`;
+      particle.style.top = `${Math.random() * 100}%`;
+      particle.style.animationDuration = `${Math.random() * 30 + 20}s`;
+      particle.style.animationDelay = `${Math.random() * 5}s`;
+      particle.style.opacity = Math.random() * 0.05 + 0.02;
+      bg.appendChild(particle);
+    }
+  }
+
+  // ====== Снежинки ======
+  function createSnowflakes() {
+    const snowContainer = document.getElementById('snowflakes');
+    for (let i = 0; i < 30; i++) {
+      const snowflake = document.createElement('div');
+      snowflake.className = 'snowflake';
+      const size = Math.random() * 4 + 2;
+      snowflake.style.width = `${size}px`;
+      snowflake.style.height = `${size}px`;
+      snowflake.style.left = `${Math.random() * 100}%`;
+      snowflake.style.animationDuration = `${Math.random() * 10 + 5}s`;
+      snowflake.style.animationDelay = `${Math.random() * 5}s`;
+      snowflake.style.opacity = Math.random() * 0.5 + 0.3;
+      snowContainer.appendChild(snowflake);
+    }
+  }
+
+  // ====== Рендер календаря ======
+  const calendarEl = document.getElementById("calendar");
+
+  function buildCalendar() {
+    calendarEl.innerHTML = "";
+
+    const today = new Date();
+    const currentDate = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const isDecemberThisYear = currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR;
+
+    for (let day = 1; day <= DAYS_COUNT; day++) {
+      const status = getDayStatus(day);
+      const cfg = DAYS_CONFIG[day] || {
+        title: "Пусто",
+        desc: "Сегодня без материального приза.",
+        icon: "✨",
+        emoji: "✨",
+        empty: true
+      };
+
+      const card = document.createElement("div");
+      const bgClass = bgClassesPool[(day - 1) % bgClassesPool.length];
+      card.className = `day-card ${bgClass} ${status}`;
+      card.dataset.day = day;
+
+      // большие эмодзи на фоне
+      const emojiBg = document.createElement("div");
+      emojiBg.className = "day-emoji-bg";
+      emojiBg.textContent = cfg.emoji || "🎁";
+      card.appendChild(emojiBg);
+
+      const numEl = document.createElement("div");
+      numEl.className = "day-number";
+      numEl.textContent = day;
+
+      const iconEl = document.createElement("div");
+      iconEl.className = "day-icon";
+      iconEl.textContent = cfg.icon || "🎁";
+
+      card.appendChild(numEl);
+      card.appendChild(iconEl);
+
+      // Лейблы
+      if (status === "expired") {
+        const lbl = document.createElement("div");
+        lbl.className = "day-label day-label-expired";
+        lbl.innerHTML = "⏳&nbsp;Прошёл";
+        card.appendChild(lbl);
+      } else if (status === "locked") {
+        const lbl = document.createElement("div");
+        lbl.className = "day-label day-label-locked";
+        
+        // Показываем "Завтра" если это следующий день
+        if (isDecemberThisYear && day === currentDate + 1) {
+          lbl.classList.remove("day-label-locked");
+          lbl.classList.add("day-label-tomorrow");
+          lbl.innerHTML = "🕒&nbsp;Завтра";
+        } else {
+          lbl.innerHTML = "🔒&nbsp;Ещё рано";
+        }
+        
+        card.appendChild(lbl);
+      }
+
+      if (status === "available" && !completedDays.includes(day)) {
+        const lbl = document.createElement("div");
+        lbl.className = "day-label day-label-pill";
+        lbl.innerHTML = cfg.empty ? "✨&nbsp;Открыть" : "🎁&nbsp;Открыть";
+        card.appendChild(lbl);
+      }
+
+      if (status === "completed") {
+        const check = document.createElement("div");
+        check.className = "day-check";
+        check.innerHTML = "<span>✓</span>";
+        card.appendChild(check);
+
+        const lbl = document.createElement("div");
+        lbl.className = "day-label day-label-pill";
+        lbl.innerHTML = "✅&nbsp;Открыто";
+        card.appendChild(lbl);
+      }
+
+      if (status === "available" || status === "completed") {
+        card.addEventListener("click", () => onDayClick(day));
+      }
+
+      calendarEl.appendChild(card);
+    }
+
+    updateProgressBar();
+  }
+
+  // ====== Прогресс ======
+  function updateProgressBar() {
+    const current = completedDays.length;
+    const percent = Math.round((current / DAYS_COUNT) * 100);
+    document.getElementById("progress-current").textContent = current;
+    document.getElementById("progress-percent").textContent = percent + "%";
+    document.getElementById("progress-fill").style.width = percent + "%";
+  }
+
+  // ====== Модальное окно ======
+  const modalBackdrop = document.getElementById("modal-backdrop");
+  const modalTitle = document.getElementById("modal-title");
+  const modalDate = document.getElementById("modal-date");
+  const modalBody = document.getElementById("modal-body");
+  const btnClaim = document.getElementById("btn-claim");
+  const btnLater = document.getElementById("btn-later");
+  const btnClose = document.getElementById("modal-close");
+
+  function openModal(dayNumber) {
+    selectedDay = dayNumber;
+    const cfg = DAYS_CONFIG[dayNumber] || {};
+    const dateObj = new Date(CALENDAR_YEAR, CALENDAR_MONTH, dayNumber);
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+
+    const status = getDayStatus(dayNumber);
+    const isCompleted = status === "completed";
+    const isEmpty = !!cfg.empty;
+
+    modalTitle.textContent = `День ${dayNumber}: ${cfg.title}`;
+    modalDate.innerHTML = `<i class="fas fa-calendar-alt"></i> ${formatter.format(dateObj)}`;
+
+    if (status === "expired") {
+      modalBody.innerHTML =
+        "Этот день уже завершён, подарки были доступны только в течение него.";
+      btnClaim.innerHTML = '<i class="fas fa-check"></i> Понятно';
+    } else if (isCompleted) {
+      modalBody.innerHTML =
+        `Ты уже открыл этот день. 🎉<br><div style="opacity:.9;font-size:14px;margin-top:10px;">Приз можно забрать во вкладке «Мои призы».</div>`;
+      btnClaim.innerHTML = isEmpty ? '<i class="fas fa-check"></i> Ок' : '<i class="fas fa-robot"></i> Ещё раз в бота';
+    } else {
+      if (isEmpty) {
+        modalBody.innerHTML =
+          cfg.desc ||
+          "Сегодня без материального приза, но праздник продолжается!";
+      } else {
+        modalBody.innerHTML =
+          (cfg.desc || "") +
+          `<div class="reward-pill">${cfg.icon || "🎁"}&nbsp;<span>${cfg.title}</span></div>`;
+      }
+      btnClaim.innerHTML = isEmpty ? '<i class="fas fa-box-open"></i> Открыть' : '<i class="fas fa-gift"></i> Забрать подарок';
+    }
+
+    modalBackdrop.classList.add("show");
+  }
+
+  function closeModal() {
+    modalBackdrop.classList.remove("show");
+    selectedDay = null;
+  }
+
+  function onDayClick(dayNumber) {
+    const status = getDayStatus(dayNumber);
+    if (status === "locked" || status === "expired") return;
+    openModal(dayNumber);
+  }
+
+  btnClaim.addEventListener("click", () => {
+    if (selectedDay == null) return;
+    const day = selectedDay;
+    const cfg = DAYS_CONFIG[day] || {};
+    const status = getDayStatus(day);
+
+    if (status === "expired") {
+      closeModal();
+      return;
+    }
+
+    // помечаем день как открытый
+    if (!completedDays.includes(day)) {
+      completedDays.push(day);
+      completedDays.sort((a, b) => a - b);
+      saveJson(STORAGE_KEY_PROGRESS, completedDays);
+    }
+
+    // если есть реальный приз (не "пусто") — добавляем в "Мои призы" и шлём в бота
+    if (!cfg.empty) {
+      const now = new Date();
+      const claimedItem = {
+        day,
+        title: cfg.title,
+        desc: cfg.desc,
+        icon: cfg.icon || "🎁",
+        claimedAt: now.toISOString()
+      };
+
+      const existsIndex = claimedPrizes.findIndex(p => p.day === day);
+      if (existsIndex >= 0) {
+        claimedPrizes[existsIndex] = claimedItem;
+      } else {
+        claimedPrizes.push(claimedItem);
+      }
+      saveJson(STORAGE_KEY_CLAIMED, claimedPrizes);
+
+      // отправка в Telegram-бота
+      sendPrizeToBot(day, claimedItem);
+    }
+
+    closeModal();
+    buildCalendar();
+    renderPrizesPage();
+  });
+
+  btnLater.addEventListener("click", closeModal);
+  btnClose.addEventListener("click", closeModal);
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+
+  // ====== МОИ ПРИЗЫ ======
+  const prizesListEl = document.getElementById("prizes-list");
+  const prizesEmptyEl = document.getElementById("prizes-empty");
+
+  function renderPrizesPage() {
+    prizesListEl.innerHTML = "";
+
+    if (!claimedPrizes.length) {
+      prizesEmptyEl.style.display = "block";
+      return;
+    }
+    prizesEmptyEl.style.display = "none";
+
+    const sorted = [...claimedPrizes].sort((a, b) => a.day - b.day);
+
+    for (const prize of sorted) {
+      const card = document.createElement("div");
+      card.className = "prize-card";
+
+      const iconWrap = document.createElement("div");
+      iconWrap.className = "prize-icon-wrap";
+      iconWrap.textContent = prize.icon || "🎁";
+
+      const main = document.createElement("div");
+      main.className = "prize-main";
+
+      const title = document.createElement("div");
+      title.className = "prize-title";
+      title.textContent = `День ${prize.day}: ${prize.title}`;
+
+      const meta = document.createElement("div");
+      meta.className = "prize-meta";
+      const dt = prize.claimedAt ? new Date(prize.claimedAt) : null;
+      const dtStr = dt
+        ? new Intl.DateTimeFormat("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(dt)
+        : "";
+      meta.innerHTML = `<i class="far fa-clock"></i> Активирован: ${dtStr}`;
+
+      const btn = document.createElement("button");
+      btn.className = "prize-btn";
+      btn.innerHTML = '<i class="fas fa-robot"></i> Активировать в боте';
+      btn.addEventListener("click", () => sendPrizeToBot(prize.day, prize));
+
+      main.appendChild(title);
+      if (prize.desc) {
+        const descEl = document.createElement("div");
+        descEl.style.fontSize = "13px";
+        descEl.style.marginBottom = "8px";
+        descEl.style.color = "#e2e8f0";
+        descEl.textContent = prize.desc;
+        main.appendChild(descEl);
+      }
+      main.appendChild(meta);
+      main.appendChild(btn);
+
+      card.appendChild(iconWrap);
+      card.appendChild(main);
+      prizesListEl.appendChild(card);
+    }
+  }
+
+  // ====== Переключение страниц ======
+  const navItems = document.querySelectorAll(".nav-item");
+  const pages = {
+    advent: document.getElementById("page-advent"),
+    prizes: document.getElementById("page-prizes")
+  };
+
+  navItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const page = item.dataset.page;
+      if (!page) return;
+
+      navItems.forEach((n) => n.classList.toggle("active", n === item));
+      for (const key in pages) {
+        pages[key].classList.toggle("active-page", key === page);
+      }
+
+      if (page === "prizes") {
+        renderPrizesPage();
+      }
+    });
+  });
+
+  // ====== Интеграция с Telegram WebApp ======
+  function sendPrizeToBot(day, prize) {
+    const cfg = DAYS_CONFIG[day] || {};
+    const payload = {
+      type: "claim_prize",
+      day,
+      title: prize?.title || cfg.title,
+      desc: prize?.desc || cfg.desc || "",
+    };
+
+    // Реальная интеграция: бот получит JSON через WebApp
+    if (window.Telegram && window.Telegram.WebApp) {
+      try {
+        window.Telegram.WebApp.sendData(JSON.stringify(payload));
+        showNotification(`Приз дня ${day} отправлен в бота!`);
+      } catch (e) {
+        console.error("Ошибка отправки в Telegram WebApp:", e);
+        showNotification("Ошибка отправки. Попробуйте позже.");
+      }
+    } else {
+      // Демо-режим в обычном браузере
+      showNotification(
+        `DEMO: Приз "${cfg.title}" отправлен в бота!\n\n` +
+        `День ${day}: ${cfg.desc}`
+      );
+    }
+  }
+
+  function showNotification(message) {
+    // Создаем уведомление
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      max-width: 300px;
+      animation: slideIn 0.3s ease-out;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    `;
+    
+    notification.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 5px;">
+        <i class="fas fa-check-circle"></i> Успешно!
+      </div>
+      <div style="font-size: 13px;">${message}</div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+    
+    // Добавляем стили для анимаций
+    if (!document.getElementById('notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'notification-styles';
+      style.textContent = `
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  // ====== Старт ======
+  createAnimatedBackground();
+  createSnowflakes();
+  updateDateInfo();
+  buildCalendar();
+  renderPrizesPage();
+  
+  // Обновляем информацию о дате каждый день
+  setInterval(updateDateInfo, 24 * 60 * 60 * 1000);
+</script>
+</body>
+</html> 
