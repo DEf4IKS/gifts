@@ -1098,627 +1098,593 @@
 </div>
 
 <script>
-  // ====== НАСТРОЙКИ АДВЕНТА ======
-  const DAYS_COUNT = 31;
-  const CALENDAR_YEAR = new Date().getFullYear();
-  const CALENDAR_MONTH = 11; // декабрь, 0-индекс
-  const STORAGE_KEY_PROGRESS = "minamoto_advent_progress_v3";
-  const STORAGE_KEY_CLAIMED = "minamoto_advent_claimed_v3";
-
-  // Конфиг по дням (index = номер дня)
-  const DAYS_CONFIG = {
-    1: { title: "День 1 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
-    2: { title: "День 2 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
-    3: { title: "День 3 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
-    
-    // День 4 специально доступен сразу (исключение)
-    4: { title: "Telegram Premium", desc: "Премиум-аккаунт Telegram на 1 месяц со всеми эксклюзивными функциями.", icon: "👑", emoji: "👑" },
-
-    5: { title: "Аккаунт Telegram (1 шт.)", desc: "Один живой Telegram-аккаунт для твоих задач.", icon: "👤", emoji: "👤" },
-    6: { title: "Чек Telegram", desc: "Чек по Telegram-аккаунту.", icon: "🧾", emoji: "🧾" },
-    7: { title: "Средний чек Telegram", desc: "Расширенный чек Telegram-аккаунта.", icon: "📄", emoji: "📄" },
-    8: { title: "2 аккаунта Telegram", desc: "Два Telegram-аккаунта в комплекте.", icon: "👥", emoji: "👥" },
-    9: { title: "Удача", desc: "Сегодня без материального приза, но удача с тобой ✨", icon: "✨", emoji: "✨", empty: true },
-    10: { title: "Прокси", desc: "Прокси для работы с Telegram/ботами.", icon: "🌐", emoji: "🌐" },
-    11: { title: "Обычный чек Telegram", desc: "Базовый чек Telegram-аккаунта.", icon: "🧾", emoji: "🧾" },
-    12: { title: "Аккаунт Telegram", desc: "Дополнительный Telegram-аккаунт.", icon: "👤", emoji: "👤" },
-    13: { title: "VPN-KEY", desc: "VPN-ключ для безопасного подключения.", icon: "🛡️", emoji: "🛡️" },
-    14: { title: "Вдохновение", desc: "Сегодня без материального приза, но праздник продолжается.", icon: "✨", emoji: "✨", empty: true },
-    15: { title: "Домен для вашего сайта", desc: "Домен для твоего будущего проекта.", icon: "🌐", emoji: "🌐" },
-    16: { title: "3 аккаунта Telegram", desc: "Сразу три Telegram-аккаунта.", icon: "👥", emoji: "👥" },
-    17: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
-    18: { title: "Средний чек", desc: "Расширенный чек аккаунта.", icon: "📄", emoji: "📄" },
-    19: { title: "MRKT-модуль", desc: "Модуль для маркетинговых задач.", icon: "🧩", emoji: "🧩" },
-    20: { title: "CryptoBot-модуль", desc: "Модуль для работы с CryptoBot.", icon: "🪙", emoji: "🪙" },
-    21: { title: "Пауза", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
-    22: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
-    23: { title: "Аккаунт Telegram", desc: "Новый Telegram-аккаунт.", icon: "👤", emoji: "👤" },
-    24: { title: "Большой чек", desc: "Максимальный подробный чек аккаунта.", icon: "📜", emoji: "📜" },
-    25: { title: "Рождественский отдых", desc: "День отдыха от призов.", icon: "✨", emoji: "✨", empty: true },
-    26: { title: "Перерыв", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
-    27: { title: "Аккаунт Telegram", desc: "Ещё один Telegram-аккаунт.", icon: "👤", emoji: "👤" },
-    28: { title: "Ожидание", desc: "Без материального приза, но впереди финал!", icon: "✨", emoji: "✨", empty: true },
-    29: { title: "Предвкушение", desc: "День без материального приза.", icon: "✨", emoji: "✨", empty: true },
-    30: { title: "Финальная пауза", desc: "Финальная пауза перед главным подарком.", icon: "✨", emoji: "✨", empty: true },
-    31: { title: "MIN PRO", desc: "Премиум-приз: тариф MIN PRO для твоих проектов на 1 год.", icon: "👑", emoji: "👑" }
-  };
-
-  const bgClassesPool = ["bg-yellow", "bg-red", "bg-green", "bg-blue", "bg-ginger", "bg-cyan", "bg-gold", "bg-purple"];
-
-  // ====== Состояние ======
-  let completedDays = loadJson(STORAGE_KEY_PROGRESS, []);
-  let claimedPrizes = loadJson(STORAGE_KEY_CLAIMED, []);
-  let selectedDay = null;
-
-  function loadJson(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      const parsed = JSON.parse(raw);
-      return parsed || fallback;
-    } catch (e) {
-      console.warn("Ошибка чтения", key, e);
-      return fallback;
-    }
-  }
-
-  function saveJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  // ====== Логика доступности дней (ИСПРАВЛЕНО) ======
-  function isDayAvailable(dayNumber) {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-январь, 11-декабрь
-    const currentDate = today.getDate();
-    
-    // Если не декабрь или не текущий год - все дни заблокированы
-    if (currentMonth !== CALENDAR_MONTH || currentYear !== CALENDAR_YEAR) {
-      return false;
-    }
-    
-    // День 4 доступен сразу (специальное исключение)
-    if (dayNumber === 4) return true;
-    
-    // Дни 1-3 недоступны (они lockedForever)
-    if (dayNumber <= 3) return false;
-    
-    // Остальные дни доступны только если наступила их дата
-    return dayNumber <= currentDate;
-  }
-
-  function getDayStatus(dayNumber) {
-    const cfg = DAYS_CONFIG[dayNumber] || {};
-    if (cfg.lockedForever) return "expired";
-    if (completedDays.includes(dayNumber)) return "completed";
-    return isDayAvailable(dayNumber) ? "available" : "locked";
-  }
-
-  // ====== Telegram WebApp интеграция ======
-  let tg = null;
-  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-    tg = Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    console.log('Telegram WebApp инициализирован');
-  }
-
-  // ====== Отправка данных в бота ======
-  async function sendPrizeToBot(dayNumber, prize) {
-    const cfg = DAYS_CONFIG[dayNumber] || {};
-    const payload = {
-      type: "claim_prize",
-      day: dayNumber,
-      title: prize?.title || cfg.title,
-      desc: prize?.desc || cfg.desc || "",
-    };
-
-    // Проверяем, открыт ли WebApp в Telegram
-    if (tg) {
-      try {
-        // Отправляем данные в бота через WebApp
-        tg.sendData(JSON.stringify(payload));
-        
-        // Показываем уведомление
-        showNotification(`Приз дня ${dayNumber} отправлен в бота! Проверь чат с ботом.`);
-        
-        // Закрываем WebApp через 3 секунды
-        setTimeout(() => {
-          if (tg.close) {
-            tg.close();
-          }
-        }, 3000);
-        
-      } catch (e) {
-        console.error("Ошибка отправки в Telegram WebApp:", e);
-        showNotification("Ошибка отправки. Попробуй скопировать данные и отправить боту вручную.");
-      }
-    } else {
-      // Если открыто не в Telegram (в браузере)
-      showNotification(
-        `Приз "${cfg.title}" доступен!\n\n` +
-        `Для получения:\n` +
-        `1. Открой @MinamotoAdventBot\n` +
-        `2. Нажми "Мои призы"\n` +
-        `3. Выбери день ${dayNumber}`
-      );
-      
-      // Показываем кнопку для открытия бота
-      if (confirm('Перейти в Telegram для получения приза?')) {
-        window.open('https://t.me/MinamotoAdventBot?start=advent', '_blank');
-      }
-    }
-  }
-
-  // ====== Отображение информации о датах ======
-  function updateDateInfo() {
-    const today = new Date();
-    const formatter = new Intl.DateTimeFormat("ru-RU", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
-    
-    document.getElementById("today-date").textContent = formatter.format(today);
-    
-    const currentDate = today.getDate();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    
-    if (currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR) {
-      document.getElementById("available-until").textContent = currentDate + " декабря";
-    } else if (currentMonth > CALENDAR_MONTH || currentYear > CALENDAR_YEAR) {
-      document.getElementById("available-until").textContent = "календарь завершён";
-    } else {
-      document.getElementById("available-until").textContent = "ожидаем декабря";
-    }
-  }
-
-  // ====== Анимированный фон ======
-  function createAnimatedBackground() {
-    const bg = document.getElementById('animated-bg');
-    for (let i = 0; i < 15; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'bg-particle';
-      const size = Math.random() * 100 + 50;
-      particle.style.width = `${size}px`;
-      particle.style.height = `${size}px`;
-      particle.style.left = `${Math.random() * 100}%`;
-      particle.style.top = `${Math.random() * 100}%`;
-      particle.style.animationDuration = `${Math.random() * 30 + 20}s`;
-      particle.style.animationDelay = `${Math.random() * 5}s`;
-      particle.style.opacity = Math.random() * 0.05 + 0.02;
-      bg.appendChild(particle);
-    }
-  }
-
-  // ====== Снежинки ======
-  function createSnowflakes() {
-    const snowContainer = document.getElementById('snowflakes');
-    for (let i = 0; i < 30; i++) {
-      const snowflake = document.createElement('div');
-      snowflake.className = 'snowflake';
-      const size = Math.random() * 4 + 2;
-      snowflake.style.width = `${size}px`;
-      snowflake.style.height = `${size}px`;
-      snowflake.style.left = `${Math.random() * 100}%`;
-      snowflake.style.animationDuration = `${Math.random() * 10 + 5}s`;
-      snowflake.style.animationDelay = `${Math.random() * 5}s`;
-      snowflake.style.opacity = Math.random() * 0.5 + 0.3;
-      snowContainer.appendChild(snowflake);
-    }
-  }
-
-  // ====== Рендер календаря ======
-  const calendarEl = document.getElementById("calendar");
-
-  function buildCalendar() {
-    calendarEl.innerHTML = "";
-
-    const today = new Date();
-    const currentDate = today.getDate();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const isDecemberThisYear = currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR;
-
-    for (let day = 1; day <= DAYS_COUNT; day++) {
-      const status = getDayStatus(day);
-      const cfg = DAYS_CONFIG[day] || {
-        title: "Пусто",
-        desc: "Сегодня без материального приза.",
-        icon: "✨",
-        emoji: "✨",
-        empty: true
-      };
-
-      const card = document.createElement("div");
-      const bgClass = bgClassesPool[(day - 1) % bgClassesPool.length];
-      card.className = `day-card ${bgClass} ${status}`;
-      card.dataset.day = day;
-
-      // большие эмодзи на фоне
-      const emojiBg = document.createElement("div");
-      emojiBg.className = "day-emoji-bg";
-      emojiBg.textContent = cfg.emoji || "🎁";
-      card.appendChild(emojiBg);
-
-      const numEl = document.createElement("div");
-      numEl.className = "day-number";
-      numEl.textContent = day;
-
-      const iconEl = document.createElement("div");
-      iconEl.className = "day-icon";
-      iconEl.textContent = cfg.icon || "🎁";
-
-      card.appendChild(numEl);
-      card.appendChild(iconEl);
-
-      // Лейблы
-      if (status === "expired") {
-        const lbl = document.createElement("div");
-        lbl.className = "day-label day-label-expired";
-        lbl.innerHTML = "⏳&nbsp;Прошёл";
-        card.appendChild(lbl);
-      } else if (status === "locked") {
-        const lbl = document.createElement("div");
-        lbl.className = "day-label day-label-locked";
-        
-        // Показываем "Завтра" если это следующий день
-        if (isDecemberThisYear && day === currentDate + 1) {
-          lbl.classList.remove("day-label-locked");
-          lbl.classList.add("day-label-tomorrow");
-          lbl.innerHTML = "🕒&nbsp;Завтра";
-        } else {
-          lbl.innerHTML = "🔒&nbsp;Ещё рано";
-        }
-        
-        card.appendChild(lbl);
-      }
-
-      if (status === "available" && !completedDays.includes(day)) {
-        const lbl = document.createElement("div");
-        lbl.className = "day-label day-label-pill";
-        lbl.innerHTML = cfg.empty ? "✨&nbsp;Открыть" : "🎁&nbsp;Открыть";
-        card.appendChild(lbl);
-      }
-
-      if (status === "completed") {
-        const check = document.createElement("div");
-        check.className = "day-check";
-        check.innerHTML = "<span>✓</span>";
-        card.appendChild(check);
-
-        const lbl = document.createElement("div");
-        lbl.className = "day-label day-label-pill";
-        lbl.innerHTML = "✅&nbsp;Открыто";
-        card.appendChild(lbl);
-      }
-
-      if (status === "available" || status === "completed") {
-        card.addEventListener("click", () => onDayClick(day));
-      }
-
-      calendarEl.appendChild(card);
-    }
-
-    updateProgressBar();
-  }
-
-  // ====== Прогресс ======
-  function updateProgressBar() {
-    const current = completedDays.length;
-    const percent = Math.round((current / DAYS_COUNT) * 100);
-    document.getElementById("progress-current").textContent = current;
-    document.getElementById("progress-percent").textContent = percent + "%";
-    document.getElementById("progress-fill").style.width = percent + "%";
-  }
-
-  // ====== Модальное окно ======
-  const modalBackdrop = document.getElementById("modal-backdrop");
-  const modalTitle = document.getElementById("modal-title");
-  const modalDate = document.getElementById("modal-date");
-  const modalBody = document.getElementById("modal-body");
-  const btnClaim = document.getElementById("btn-claim");
-  const btnLater = document.getElementById("btn-later");
-  const btnClose = document.getElementById("modal-close");
-
-  function openModal(dayNumber) {
-    selectedDay = dayNumber;
-    const cfg = DAYS_CONFIG[dayNumber] || {};
-    const dateObj = new Date(CALENDAR_YEAR, CALENDAR_MONTH, dayNumber);
-    const formatter = new Intl.DateTimeFormat("ru-RU", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
-
-    const status = getDayStatus(dayNumber);
-    const isCompleted = status === "completed";
-    const isEmpty = !!cfg.empty;
-
-    modalTitle.textContent = `День ${dayNumber}: ${cfg.title}`;
-    modalDate.innerHTML = `<i class="fas fa-calendar-alt"></i> ${formatter.format(dateObj)}`;
-
-    if (status === "expired") {
-      modalBody.innerHTML =
-        "Этот день уже завершён, подарки были доступны только в течение него.";
-      btnClaim.innerHTML = '<i class="fas fa-check"></i> Понятно';
-    } else if (isCompleted) {
-      modalBody.innerHTML =
-        `Ты уже открыл этот день. 🎉<br><div style="opacity:.9;font-size:14px;margin-top:10px;">Приз можно забрать во вкладке «Мои призы».</div>`;
-      btnClaim.innerHTML = isEmpty ? '<i class="fas fa-check"></i> Ок' : '<i class="fas fa-robot"></i> Ещё раз в бота';
-    } else {
-      if (isEmpty) {
-        modalBody.innerHTML =
-          cfg.desc ||
-          "Сегодня без материального приза, но праздник продолжается!";
-        btnClaim.innerHTML = '<i class="fas fa-box-open"></i> Открыть';
-      } else {
-        modalBody.innerHTML =
-          (cfg.desc || "") +
-          `<div class="reward-pill">${cfg.icon || "🎁"}&nbsp;<span>${cfg.title}</span></div>`;
-        btnClaim.innerHTML = '<i class="fas fa-gift"></i> Забрать подарок';
-      }
-    }
-
-    modalBackdrop.classList.add("show");
-  }
-
-  function closeModal() {
-    modalBackdrop.classList.remove("show");
-    selectedDay = null;
-  }
-
-  function onDayClick(dayNumber) {
-    const status = getDayStatus(dayNumber);
-    if (status === "locked" || status === "expired") return;
-    openModal(dayNumber);
-  }
-
-  btnClaim.addEventListener("click", async () => {
-    if (selectedDay == null) return;
-    const day = selectedDay;
-    const cfg = DAYS_CONFIG[day] || {};
-    const status = getDayStatus(day);
-
-    if (status === "expired") {
-      closeModal();
-      return;
-    }
-
-    // Помечаем день как открытый
-    if (!completedDays.includes(day)) {
-      completedDays.push(day);
-      completedDays.sort((a, b) => a - b);
-      saveJson(STORAGE_KEY_PROGRESS, completedDays);
-    }
-
-    // Если есть реальный приз (не "пусто") — добавляем в "Мои призы" и отправляем в бота
-    if (!cfg.empty) {
-      const now = new Date();
-      const claimedItem = {
-        day,
-        title: cfg.title,
-        desc: cfg.desc,
-        icon: cfg.icon || "🎁",
-        claimedAt: now.toISOString()
-      };
-
-      const existsIndex = claimedPrizes.findIndex(p => p.day === day);
-      if (existsIndex >= 0) {
-        claimedPrizes[existsIndex] = claimedItem;
-      } else {
-        claimedPrizes.push(claimedItem);
-      }
-      saveJson(STORAGE_KEY_CLAIMED, claimedPrizes);
-
-      // Отправляем в Telegram-бота
-      await sendPrizeToBot(day, claimedItem);
-    } else {
-      // Для дней без приза просто закрываем окно
-      closeModal();
-      showNotification("День открыт! 🎉");
-    }
-
-    buildCalendar();
-    renderPrizesPage();
-    
-    // Если это день без приза, закрываем модалку
-    if (cfg.empty) {
-      closeModal();
-    }
-  });
-
-  btnLater.addEventListener("click", closeModal);
-  btnClose.addEventListener("click", closeModal);
-  modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) closeModal();
-  });
-
-  // ====== МОИ ПРИЗЫ ======
-  const prizesListEl = document.getElementById("prizes-list");
-  const prizesEmptyEl = document.getElementById("prizes-empty");
-
-  function renderPrizesPage() {
-    prizesListEl.innerHTML = "";
-
-    if (!claimedPrizes.length) {
-      prizesEmptyEl.style.display = "block";
-      return;
-    }
-    prizesEmptyEl.style.display = "none";
-
-    const sorted = [...claimedPrizes].sort((a, b) => a.day - b.day);
-
-    for (const prize of sorted) {
-      const card = document.createElement("div");
-      card.className = "prize-card";
-
-      const iconWrap = document.createElement("div");
-      iconWrap.className = "prize-icon-wrap";
-      iconWrap.textContent = prize.icon || "🎁";
-
-      const main = document.createElement("div");
-      main.className = "prize-main";
-
-      const title = document.createElement("div");
-      title.className = "prize-title";
-      title.textContent = `День ${prize.day}: ${prize.title}`;
-
-      const meta = document.createElement("div");
-      meta.className = "prize-meta";
-      const dt = prize.claimedAt ? new Date(prize.claimedAt) : null;
-      const dtStr = dt
-        ? new Intl.DateTimeFormat("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit"
-          }).format(dt)
-        : "";
-      meta.innerHTML = `<i class="far fa-clock"></i> Активирован: ${dtStr}`;
-
-      const btn = document.createElement("button");
-      btn.className = "prize-btn";
-      btn.innerHTML = '<i class="fas fa-robot"></i> Активировать в боте';
-      btn.addEventListener("click", () => sendPrizeToBot(prize.day, prize));
-
-      main.appendChild(title);
-      if (prize.desc) {
-        const descEl = document.createElement("div");
-        descEl.style.fontSize = "13px";
-        descEl.style.marginBottom = "8px";
-        descEl.style.color = "#e2e8f0";
-        descEl.textContent = prize.desc;
-        main.appendChild(descEl);
-      }
-      main.appendChild(meta);
-      main.appendChild(btn);
-
-      card.appendChild(iconWrap);
-      card.appendChild(main);
-      prizesListEl.appendChild(card);
-    }
-  }
-
-  // ====== Переключение страниц ======
-  const navItems = document.querySelectorAll(".nav-item");
-  const pages = {
-    advent: document.getElementById("page-advent"),
-    prizes: document.getElementById("page-prizes")
-  };
-
-  navItems.forEach((item) => {
-    item.addEventListener("click", () => {
-      const page = item.dataset.page;
-      if (!page) return;
-
-      navItems.forEach((n) => n.classList.toggle("active", n === item));
-      for (const key in pages) {
-        pages[key].classList.toggle("active-page", key === page);
-      }
-
-      if (page === "prizes") {
-        renderPrizesPage();
-      }
-    });
-  });
-
-  // ====== Уведомления ======
-  function showNotification(message) {
-    // Создаем уведомление
-    const notification = document.createElement('div');
-    notification.id = 'temp-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
-      color: white;
-      padding: 20px 25px;
-      border-radius: 16px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-      z-index: 10000;
-      max-width: 350px;
-      text-align: center;
-      animation: fadeInScale 0.3s ease-out;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(10px);
-      font-family: inherit;
-    `;
-    
-    notification.innerHTML = `
-      <div style="font-size: 20px; margin-bottom: 10px;">
-        <i class="fas fa-bell"></i>
-      </div>
-      <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">
-        Уведомление
-      </div>
-      <div style="font-size: 14px; line-height: 1.4;">${message}</div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Удаляем уведомление через 3 секунды
-    setTimeout(() => {
-      notification.style.animation = 'fadeOutScale 0.3s ease-out';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-    
-    // Добавляем стили для анимаций
-    if (!document.getElementById('notification-styles')) {
-      const style = document.createElement('style');
-      style.id = 'notification-styles';
-      style.textContent = `
-        @keyframes fadeInScale {
-          from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-        @keyframes fadeOutScale {
-          from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-          to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }
-
-  // ====== Инициализация при загрузке ======
-  document.addEventListener('DOMContentLoaded', function() {
-    // Проверяем, открыто ли в Telegram WebApp
-    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-      console.log('Telegram WebApp detected');
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
-      
-      // Можно также изменить тему
-      Telegram.WebApp.setHeaderColor('#0b1a2a');
-      Telegram.WebApp.setBackgroundColor('#051016');
-    } else {
-      console.log('Running in browser mode');
-      // Показываем информацию о том, как получить призы
-      setTimeout(() => {
-        showNotification(
-          'Для получения призов:\n' +
-          '1. Откройте @MinamotoAdventBot в Telegram\n' +
-          '2. Нажмите "Открыть адвент-календарь"\n' +
-          '3. Забирайте призы через бота!'
-        );
-      }, 2000);
-    }
-    
-    // Остальная инициализация
-    createAnimatedBackground();
-    createSnowflakes();
-    updateDateInfo();
-    buildCalendar();
-    renderPrizesPage();
-    
-    // Обновляем информацию о дате каждый день
-    setInterval(updateDateInfo, 24 * 60 * 60 * 1000);
-  });
+	// ====== НАСТРОЙКИ АДВЕНТА ======
+	const DAYS_COUNT = 31;
+	const CALENDAR_YEAR = new Date().getFullYear();
+	const CALENDAR_MONTH = 11; // декабрь, 0-индекс
+	const STORAGE_KEY_PROGRESS = "minamoto_advent_progress_v3";
+	const STORAGE_KEY_CLAIMED = "minamoto_advent_claimed_v3";
+
+	// Конфиг по дням (index = номер дня)
+	const DAYS_CONFIG = {
+			1: { title: "День 1 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+			2: { title: "День 2 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+			3: { title: "День 3 завершён", desc: "Этот день уже прошёл, подарок был доступен только в течение дня.", icon: "⏳", emoji: "⏳", empty: true, lockedForever: true },
+			
+			// День 4 специально доступен сразу (исключение)
+			4: { title: "Telegram Premium", desc: "Премиум-аккаунт Telegram на 1 месяц со всеми эксклюзивными функциями.", icon: "👑", emoji: "👑" },
+
+			5: { title: "Аккаунт Telegram (1 шт.)", desc: "Один живой Telegram-аккаунт для твоих задач.", icon: "👤", emoji: "👤" },
+			6: { title: "Чек Telegram", desc: "Чек по Telegram-аккаунту.", icon: "🧾", emoji: "🧾" },
+			7: { title: "Средний чек Telegram", desc: "Расширенный чек Telegram-аккаунта.", icon: "📄", emoji: "📄" },
+			8: { title: "2 аккаунта Telegram", desc: "Два Telegram-аккаунта в комплекте.", icon: "👥", emoji: "👥" },
+			9: { title: "Удача", desc: "Сегодня без материального приза, но удача с тобой ✨", icon: "✨", emoji: "✨", empty: true },
+			10: { title: "Прокси", desc: "Прокси для работы с Telegram/ботами.", icon: "🌐", emoji: "🌐" },
+			11: { title: "Обычный чек Telegram", desc: "Базовый чек Telegram-аккаунта.", icon: "🧾", emoji: "🧾" },
+			12: { title: "Аккаунт Telegram", desc: "Дополнительный Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+			13: { title: "VPN-KEY", desc: "VPN-ключ для безопасного подключения.", icon: "🛡️", emoji: "🛡️" },
+			14: { title: "Вдохновение", desc: "Сегодня без материального приза, но праздник продолжается.", icon: "✨", emoji: "✨", empty: true },
+			15: { title: "Домен для вашего сайта", desc: "Домен для твоего будущего проекта.", icon: "🌐", emoji: "🌐" },
+			16: { title: "3 аккаунта Telegram", desc: "Сразу три Telegram-аккаунта.", icon: "👥", emoji: "👥" },
+			17: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
+			18: { title: "Средний чек", desc: "Расширенный чек аккаунта.", icon: "📄", emoji: "📄" },
+			19: { title: "MRKT-модуль", desc: "Модуль для маркетинговых задач.", icon: "🧩", emoji: "🧩" },
+			20: { title: "CryptoBot-модуль", desc: "Модуль для работы с CryptoBot.", icon: "🪙", emoji: "🪙" },
+			21: { title: "Пауза", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
+			22: { title: "Чек", desc: "Чек по аккаунту.", icon: "🧾", emoji: "🧾" },
+			23: { title: "Аккаунт Telegram", desc: "Новый Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+			24: { title: "Большой чек", desc: "Максимальный подробный чек аккаунта.", icon: "📜", emoji: "📜" },
+			25: { title: "Рождественский отдых", desc: "День отдыха от призов.", icon: "✨", emoji: "✨", empty: true },
+			26: { title: "Перерыв", desc: "Сегодня без материального приза.", icon: "✨", emoji: "✨", empty: true },
+			27: { title: "Аккаунт Telegram", desc: "Ещё один Telegram-аккаунт.", icon: "👤", emoji: "👤" },
+			28: { title: "Ожидание", desc: "Без материального приза, но впереди финал!", icon: "✨", emoji: "✨", empty: true },
+			29: { title: "Предвкушение", desc: "День без материального приза.", icon: "✨", emoji: "✨", empty: true },
+			30: { title: "Финальная пауза", desc: "Финальная пауза перед главным подарком.", icon: "✨", emoji: "✨", empty: true },
+			31: { title: "MIN PRO", desc: "Премиум-приз: тариф MIN PRO для твоих проектов на 1 год.", icon: "👑", emoji: "👑" }
+	};
+
+	const bgClassesPool = ["bg-yellow", "bg-red", "bg-green", "bg-blue", "bg-ginger", "bg-cyan", "bg-gold", "bg-purple"];
+
+	// ====== Состояние ======
+	let completedDays = loadJson(STORAGE_KEY_PROGRESS, []);
+	let claimedPrizes = loadJson(STORAGE_KEY_CLAIMED, []);
+	let selectedDay = null;
+
+	// ====== Telegram WebApp ======
+	let tg = window.Telegram?.WebApp;
+
+	function loadJson(key, fallback) {
+			try {
+					const raw = localStorage.getItem(key);
+					if (!raw) return fallback;
+					const parsed = JSON.parse(raw);
+					return parsed || fallback;
+			} catch (e) {
+					console.warn("Ошибка чтения", key, e);
+					return fallback;
+			}
+	}
+
+	function saveJson(key, value) {
+			localStorage.setItem(key, JSON.stringify(value));
+	}
+
+	// ====== Логика доступности дней ======
+	function isDayAvailable(dayNumber) {
+			const today = new Date();
+			const currentYear = today.getFullYear();
+			const currentMonth = today.getMonth(); // 0-январь, 11-декабрь
+			const currentDate = today.getDate();
+			
+			// Если не декабрь или не текущий год - все дни заблокированы
+			if (currentMonth !== CALENDAR_MONTH || currentYear !== CALENDAR_YEAR) {
+					return false;
+			}
+			
+			// День 4 доступен сразу (специальное исключение)
+			if (dayNumber === 4) return true;
+			
+			// Дни 1-3 недоступны (они lockedForever)
+			if (dayNumber <= 3) return false;
+			
+			// Остальные дни доступны только если наступила их дата
+			return dayNumber <= currentDate;
+	}
+
+	function getDayStatus(dayNumber) {
+			const cfg = DAYS_CONFIG[dayNumber] || {};
+			if (cfg.lockedForever) return "expired";
+			if (completedDays.includes(dayNumber)) return "completed";
+			return isDayAvailable(dayNumber) ? "available" : "locked";
+	}
+
+	// ====== Отображение информации о датах ======
+	function updateDateInfo() {
+			const today = new Date();
+			const formatter = new Intl.DateTimeFormat("ru-RU", {
+					day: "numeric",
+					month: "long",
+					year: "numeric"
+			});
+			
+			document.getElementById("today-date").textContent = formatter.format(today);
+			
+			const currentDate = today.getDate();
+			const currentMonth = today.getMonth();
+			const currentYear = today.getFullYear();
+			
+			if (currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR) {
+					document.getElementById("available-until").textContent = currentDate + " декабря";
+			} else if (currentMonth > CALENDAR_MONTH || currentYear > CALENDAR_YEAR) {
+					document.getElementById("available-until").textContent = "календарь завершён";
+			} else {
+					document.getElementById("available-until").textContent = "ожидаем декабря";
+			}
+	}
+
+	// ====== Анимированный фон ======
+	function createAnimatedBackground() {
+			const bg = document.getElementById('animated-bg');
+			for (let i = 0; i < 15; i++) {
+					const particle = document.createElement('div');
+					particle.className = 'bg-particle';
+					const size = Math.random() * 100 + 50;
+					particle.style.width = `${size}px`;
+					particle.style.height = `${size}px`;
+					particle.style.left = `${Math.random() * 100}%`;
+					particle.style.top = `${Math.random() * 100}%`;
+					particle.style.animationDuration = `${Math.random() * 30 + 20}s`;
+					particle.style.animationDelay = `${Math.random() * 5}s`;
+					particle.style.opacity = Math.random() * 0.05 + 0.02;
+					bg.appendChild(particle);
+			}
+	}
+
+	// ====== Снежинки ======
+	function createSnowflakes() {
+			const snowContainer = document.getElementById('snowflakes');
+			for (let i = 0; i < 30; i++) {
+					const snowflake = document.createElement('div');
+					snowflake.className = 'snowflake';
+					const size = Math.random() * 4 + 2;
+					snowflake.style.width = `${size}px`;
+					snowflake.style.height = `${size}px`;
+					snowflake.style.left = `${Math.random() * 100}%`;
+					snowflake.style.animationDuration = `${Math.random() * 10 + 5}s`;
+					snowflake.style.animationDelay = `${Math.random() * 5}s`;
+					snowflake.style.opacity = Math.random() * 0.5 + 0.3;
+					snowContainer.appendChild(snowflake);
+			}
+	}
+
+	// ====== Рендер календаря ======
+	const calendarEl = document.getElementById("calendar");
+
+	function buildCalendar() {
+			calendarEl.innerHTML = "";
+
+			const today = new Date();
+			const currentDate = today.getDate();
+			const currentMonth = today.getMonth();
+			const currentYear = today.getFullYear();
+			const isDecemberThisYear = currentMonth === CALENDAR_MONTH && currentYear === CALENDAR_YEAR;
+
+			for (let day = 1; day <= DAYS_COUNT; day++) {
+					const status = getDayStatus(day);
+					const cfg = DAYS_CONFIG[day] || {
+							title: "Пусто",
+							desc: "Сегодня без материального приза.",
+							icon: "✨",
+							emoji: "✨",
+							empty: true
+					};
+
+					const card = document.createElement("div");
+					const bgClass = bgClassesPool[(day - 1) % bgClassesPool.length];
+					card.className = `day-card ${bgClass} ${status}`;
+					card.dataset.day = day;
+
+					// большие эмодзи на фоне
+					const emojiBg = document.createElement("div");
+					emojiBg.className = "day-emoji-bg";
+					emojiBg.textContent = cfg.emoji || "🎁";
+					card.appendChild(emojiBg);
+
+					const numEl = document.createElement("div");
+					numEl.className = "day-number";
+					numEl.textContent = day;
+
+					const iconEl = document.createElement("div");
+					iconEl.className = "day-icon";
+					iconEl.textContent = cfg.icon || "🎁";
+
+					card.appendChild(numEl);
+					card.appendChild(iconEl);
+
+					// Лейблы
+					if (status === "expired") {
+							const lbl = document.createElement("div");
+							lbl.className = "day-label day-label-expired";
+							lbl.innerHTML = "⏳&nbsp;Прошёл";
+							card.appendChild(lbl);
+					} else if (status === "locked") {
+							const lbl = document.createElement("div");
+							lbl.className = "day-label day-label-locked";
+							
+							// Показываем "Завтра" если это следующий день
+							if (isDecemberThisYear && day === currentDate + 1) {
+									lbl.classList.remove("day-label-locked");
+									lbl.classList.add("day-label-tomorrow");
+									lbl.innerHTML = "🕒&nbsp;Завтра";
+							} else {
+									lbl.innerHTML = "🔒&nbsp;Ещё рано";
+							}
+							
+							card.appendChild(lbl);
+					}
+
+					if (status === "available" && !completedDays.includes(day)) {
+							const lbl = document.createElement("div");
+							lbl.className = "day-label day-label-pill";
+							lbl.innerHTML = cfg.empty ? "✨&nbsp;Открыть" : "🎁&nbsp;Открыть";
+							card.appendChild(lbl);
+					}
+
+					if (status === "completed") {
+							const check = document.createElement("div");
+							check.className = "day-check";
+							check.innerHTML = "<span>✓</span>";
+							card.appendChild(check);
+
+							const lbl = document.createElement("div");
+							lbl.className = "day-label day-label-pill";
+							lbl.innerHTML = "✅&nbsp;Открыто";
+							card.appendChild(lbl);
+					}
+
+					if (status === "available" || status === "completed") {
+							card.addEventListener("click", () => onDayClick(day));
+					}
+
+					calendarEl.appendChild(card);
+			}
+
+			updateProgressBar();
+	}
+
+	// ====== Прогресс ======
+	function updateProgressBar() {
+			const current = completedDays.length;
+			const percent = Math.round((current / DAYS_COUNT) * 100);
+			document.getElementById("progress-current").textContent = current;
+			document.getElementById("progress-percent").textContent = percent + "%";
+			document.getElementById("progress-fill").style.width = percent + "%";
+	}
+
+	// ====== Модальное окно ======
+	const modalBackdrop = document.getElementById("modal-backdrop");
+	const modalTitle = document.getElementById("modal-title");
+	const modalDate = document.getElementById("modal-date");
+	const modalBody = document.getElementById("modal-body");
+	const btnClaim = document.getElementById("btn-claim");
+	const btnLater = document.getElementById("btn-later");
+	const btnClose = document.getElementById("modal-close");
+
+	function openModal(dayNumber) {
+			selectedDay = dayNumber;
+			const cfg = DAYS_CONFIG[dayNumber] || {};
+			const dateObj = new Date(CALENDAR_YEAR, CALENDAR_MONTH, dayNumber);
+			const formatter = new Intl.DateTimeFormat("ru-RU", {
+					day: "numeric",
+					month: "long",
+					year: "numeric"
+			});
+
+			const status = getDayStatus(dayNumber);
+			const isCompleted = status === "completed";
+			const isEmpty = !!cfg.empty;
+
+			modalTitle.textContent = `День ${dayNumber}: ${cfg.title}`;
+			modalDate.innerHTML = `<i class="fas fa-calendar-alt"></i> ${formatter.format(dateObj)}`;
+
+			if (status === "expired") {
+					modalBody.innerHTML =
+							"Этот день уже завершён, подарки были доступны только в течение него.";
+					btnClaim.innerHTML = '<i class="fas fa-check"></i> Понятно';
+			} else if (isCompleted) {
+					modalBody.innerHTML =
+							`Ты уже открыл этот день. 🎉<br><div style="opacity:.9;font-size:14px;margin-top:10px;">Приз можно забрать во вкладке «Мои призы».</div>`;
+					btnClaim.innerHTML = isEmpty ? '<i class="fas fa-check"></i> Ок' : '<i class="fas fa-robot"></i> Ещё раз в бота';
+			} else {
+					if (isEmpty) {
+							modalBody.innerHTML =
+									cfg.desc ||
+									"Сегодня без материального приза, но праздник продолжается!";
+					} else {
+							modalBody.innerHTML =
+									(cfg.desc || "") +
+									`<div class="reward-pill">${cfg.icon || "🎁"}&nbsp;<span>${cfg.title}</span></div>`;
+					}
+					btnClaim.innerHTML = isEmpty ? '<i class="fas fa-box-open"></i> Открыть' : '<i class="fas fa-gift"></i> Забрать подарок';
+			}
+
+			modalBackdrop.classList.add("show");
+	}
+
+	function closeModal() {
+			modalBackdrop.classList.remove("show");
+			selectedDay = null;
+	}
+
+	function onDayClick(dayNumber) {
+			const status = getDayStatus(dayNumber);
+			if (status === "locked" || status === "expired") return;
+			openModal(dayNumber);
+	}
+
+	btnClaim.addEventListener("click", async () => {
+			if (selectedDay == null) return;
+			const day = selectedDay;
+			const cfg = DAYS_CONFIG[day] || {};
+			const status = getDayStatus(day);
+
+			if (status === "expired") {
+					closeModal();
+					return;
+			}
+
+			// помечаем день как открытый
+			if (!completedDays.includes(day)) {
+					completedDays.push(day);
+					completedDays.sort((a, b) => a - b);
+					saveJson(STORAGE_KEY_PROGRESS, completedDays);
+			}
+
+			// если есть реальный приз (не "пусто") — добавляем в "Мои призы"
+			if (!cfg.empty) {
+					const now = new Date();
+					const claimedItem = {
+							day,
+							title: cfg.title,
+							desc: cfg.desc,
+							icon: cfg.icon || "🎁",
+							claimedAt: now.toISOString()
+					};
+
+					const existsIndex = claimedPrizes.findIndex(p => p.day === day);
+					if (existsIndex >= 0) {
+							claimedPrizes[existsIndex] = claimedItem;
+					} else {
+							claimedPrizes.push(claimedItem);
+					}
+					saveJson(STORAGE_KEY_CLAIMED, claimedPrizes);
+					
+					// отправка в Telegram-бота (НОВЫЙ МЕТОД - без закрытия WebApp)
+					await sendPrizeToBotNew(day, claimedItem);
+			} else {
+					// Для дней без приза просто закрываем окно
+					closeModal();
+					showNotification("День открыт! 🎉");
+			}
+
+			buildCalendar();
+			renderPrizesPage();
+			
+			// Закрываем модалку только для дней без приза
+			if (cfg.empty) {
+					closeModal();
+			}
+	});
+
+	btnLater.addEventListener("click", closeModal);
+	btnClose.addEventListener("click", closeModal);
+	modalBackdrop.addEventListener("click", (e) => {
+			if (e.target === modalBackdrop) closeModal();
+	});
+
+	// ====== МОИ ПРИЗЫ ======
+	const prizesListEl = document.getElementById("prizes-list");
+	const prizesEmptyEl = document.getElementById("prizes-empty");
+
+	function renderPrizesPage() {
+			prizesListEl.innerHTML = "";
+
+			if (!claimedPrizes.length) {
+					prizesEmptyEl.style.display = "block";
+					return;
+			}
+			prizesEmptyEl.style.display = "none";
+
+			const sorted = [...claimedPrizes].sort((a, b) => a.day - b.day);
+
+			for (const prize of sorted) {
+					const card = document.createElement("div");
+					card.className = "prize-card";
+
+					const iconWrap = document.createElement("div");
+					iconWrap.className = "prize-icon-wrap";
+					iconWrap.textContent = prize.icon || "🎁";
+
+					const main = document.createElement("div");
+					main.className = "prize-main";
+
+					const title = document.createElement("div");
+					title.className = "prize-title";
+					title.textContent = `День ${prize.day}: ${prize.title}`;
+
+					const meta = document.createElement("div");
+					meta.className = "prize-meta";
+					const dt = prize.claimedAt ? new Date(prize.claimedAt) : null;
+					const dtStr = dt
+							? new Intl.DateTimeFormat("ru-RU", {
+									day: "2-digit",
+									month: "2-digit",
+									hour: "2-digit",
+									minute: "2-digit"
+							}).format(dt)
+							: "";
+					meta.innerHTML = `<i class="far fa-clock"></i> Активирован: ${dtStr}`;
+
+					const btn = document.createElement("button");
+					btn.className = "prize-btn";
+					btn.innerHTML = '<i class="fas fa-robot"></i> Получить приз';
+					btn.addEventListener("click", () => sendPrizeToBotNew(prize.day, prize));
+
+					main.appendChild(title);
+					if (prize.desc) {
+							const descEl = document.createElement("div");
+							descEl.style.fontSize = "13px";
+							descEl.style.marginBottom = "8px";
+							descEl.style.color = "#e2e8f0";
+							descEl.textContent = prize.desc;
+							main.appendChild(descEl);
+					}
+					main.appendChild(meta);
+					main.appendChild(btn);
+
+					card.appendChild(iconWrap);
+					card.appendChild(main);
+					prizesListEl.appendChild(card);
+			}
+	}
+
+	// ====== Переключение страниц ======
+	const navItems = document.querySelectorAll(".nav-item");
+	const pages = {
+			advent: document.getElementById("page-advent"),
+			prizes: document.getElementById("page-prizes")
+	};
+
+	navItems.forEach((item) => {
+			item.addEventListener("click", () => {
+					const page = item.dataset.page;
+					if (!page) return;
+
+					navItems.forEach((n) => n.classList.toggle("active", n === item));
+					for (const key in pages) {
+							pages[key].classList.toggle("active-page", key === page);
+					}
+
+					if (page === "prizes") {
+							renderPrizesPage();
+					}
+			});
+	});
+
+	// ====== НОВАЯ Функция отправки приза в бота (без закрытия WebApp) ======
+	async function sendPrizeToBotNew(day, prize) {
+			const cfg = DAYS_CONFIG[day] || {};
+			
+			// Проверяем, открыт ли WebApp в Telegram
+			if (window.Telegram && window.Telegram.WebApp) {
+					try {
+							// Открываем ссылку на бота с параметром дня
+							const botUrl = `https://t.me/MinamotoAdventBot?start=advent_${day}`;
+							window.Telegram.WebApp.openLink(botUrl);
+							
+							// Не закрываем WebApp! Просто показываем уведомление
+							showNotification(`Открываю бота для получения приза дня ${day}...`);
+							
+					} catch (e) {
+							console.error("Ошибка отправки в Telegram:", e);
+							showNotification("Ошибка. Откройте бота вручную: @MinamotoAdventBot");
+					}
+			} else {
+					// Если открыто не в Telegram (в браузере)
+					showNotification(
+							`Приз "${cfg.title}" доступен!\n\n` +
+							`Для получения откройте:\n` +
+							`https://t.me/MinamotoAdventBot?start=advent_${day}`
+					);
+					
+					// Показываем кнопку для открытия бота
+					if (confirm('Открыть Telegram для получения приза?')) {
+							window.open(`https://t.me/MinamotoAdventBot?start=advent_${day}`, '_blank');
+					}
+			}
+	}
+
+	// ====== Функция для показа уведомлений ======
+	function showNotification(message) {
+			// Создаем уведомление
+			const notification = document.createElement('div');
+			notification.style.cssText = `
+					position: fixed;
+					top: 50%;
+					left: 50%;
+					transform: translate(-50%, -50%);
+					background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+					color: white;
+					padding: 20px 25px;
+					border-radius: 16px;
+					box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+					z-index: 10000;
+					max-width: 350px;
+					text-align: center;
+					animation: fadeInScale 0.3s ease-out;
+					border: 2px solid rgba(255, 255, 255, 0.3);
+					backdrop-filter: blur(10px);
+					font-family: inherit;
+			`;
+			
+			notification.innerHTML = `
+					<div style="font-size: 20px; margin-bottom: 10px;">
+							<i class="fas fa-bell"></i>
+					</div>
+					<div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">
+							Уведомление
+					</div>
+					<div style="font-size: 14px; line-height: 1.4;">${message}</div>
+			`;
+			
+			document.body.appendChild(notification);
+			
+			// Удаляем уведомление через 3 секунды
+			setTimeout(() => {
+					notification.style.animation = 'fadeOutScale 0.3s ease-out';
+					setTimeout(() => notification.remove(), 300);
+			}, 3000);
+			
+			// Добавляем стили для анимаций
+			if (!document.getElementById('notification-styles')) {
+					const style = document.createElement('style');
+					style.id = 'notification-styles';
+					style.textContent = `
+							@keyframes fadeInScale {
+									from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+									to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+							}
+							@keyframes fadeOutScale {
+									from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+									to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+							}
+					`;
+					document.head.appendChild(style);
+			}
+	}
+
+	// ====== Старт ======
+	document.addEventListener('DOMContentLoaded', function() {
+			// Инициализация Telegram WebApp
+			if (window.Telegram && window.Telegram.WebApp) {
+					window.Telegram.WebApp.ready();
+					window.Telegram.WebApp.expand(); // Разворачиваем на весь экран
+					
+					// Настраиваем внешний вид
+					window.Telegram.WebApp.setHeaderColor('#0b1a2a');
+					window.Telegram.WebApp.setBackgroundColor('#051016');
+					window.Telegram.WebApp.enableClosingConfirmation();
+			}
+			
+			createAnimatedBackground();
+			createSnowflakes();
+			updateDateInfo();
+			buildCalendar();
+			renderPrizesPage();
+			
+			// Обновляем информацию о дате каждый день
+			setInterval(updateDateInfo, 24 * 60 * 60 * 1000);
+	});
 </script>
 </body>
 </html>
