@@ -5,6 +5,7 @@
   <title>MINAMOTO YEARS — Адвент календарь</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -1194,6 +1195,62 @@
     return isDayAvailable(dayNumber) ? "available" : "locked";
   }
 
+  // ====== Telegram WebApp интеграция ======
+  let tg = null;
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    tg = Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    console.log('Telegram WebApp инициализирован');
+  }
+
+  // ====== Отправка данных в бота ======
+  async function sendPrizeToBot(dayNumber, prize) {
+    const cfg = DAYS_CONFIG[dayNumber] || {};
+    const payload = {
+      type: "claim_prize",
+      day: dayNumber,
+      title: prize?.title || cfg.title,
+      desc: prize?.desc || cfg.desc || "",
+    };
+
+    // Проверяем, открыт ли WebApp в Telegram
+    if (tg) {
+      try {
+        // Отправляем данные в бота через WebApp
+        tg.sendData(JSON.stringify(payload));
+        
+        // Показываем уведомление
+        showNotification(`Приз дня ${dayNumber} отправлен в бота! Проверь чат с ботом.`);
+        
+        // Закрываем WebApp через 3 секунды
+        setTimeout(() => {
+          if (tg.close) {
+            tg.close();
+          }
+        }, 3000);
+        
+      } catch (e) {
+        console.error("Ошибка отправки в Telegram WebApp:", e);
+        showNotification("Ошибка отправки. Попробуй скопировать данные и отправить боту вручную.");
+      }
+    } else {
+      // Если открыто не в Telegram (в браузере)
+      showNotification(
+        `Приз "${cfg.title}" доступен!\n\n` +
+        `Для получения:\n` +
+        `1. Открой @MinamotoAdventBot\n` +
+        `2. Нажми "Мои призы"\n` +
+        `3. Выбери день ${dayNumber}`
+      );
+      
+      // Показываем кнопку для открытия бота
+      if (confirm('Перейти в Telegram для получения приза?')) {
+        window.open('https://t.me/MinamotoAdventBot?start=advent', '_blank');
+      }
+    }
+  }
+
   // ====== Отображение информации о датах ======
   function updateDateInfo() {
     const today = new Date();
@@ -1396,12 +1453,13 @@
         modalBody.innerHTML =
           cfg.desc ||
           "Сегодня без материального приза, но праздник продолжается!";
+        btnClaim.innerHTML = '<i class="fas fa-box-open"></i> Открыть';
       } else {
         modalBody.innerHTML =
           (cfg.desc || "") +
           `<div class="reward-pill">${cfg.icon || "🎁"}&nbsp;<span>${cfg.title}</span></div>`;
+        btnClaim.innerHTML = '<i class="fas fa-gift"></i> Забрать подарок';
       }
-      btnClaim.innerHTML = isEmpty ? '<i class="fas fa-box-open"></i> Открыть' : '<i class="fas fa-gift"></i> Забрать подарок';
     }
 
     modalBackdrop.classList.add("show");
@@ -1418,7 +1476,7 @@
     openModal(dayNumber);
   }
 
-  btnClaim.addEventListener("click", () => {
+  btnClaim.addEventListener("click", async () => {
     if (selectedDay == null) return;
     const day = selectedDay;
     const cfg = DAYS_CONFIG[day] || {};
@@ -1429,14 +1487,14 @@
       return;
     }
 
-    // помечаем день как открытый
+    // Помечаем день как открытый
     if (!completedDays.includes(day)) {
       completedDays.push(day);
       completedDays.sort((a, b) => a - b);
       saveJson(STORAGE_KEY_PROGRESS, completedDays);
     }
 
-    // если есть реальный приз (не "пусто") — добавляем в "Мои призы" и шлём в бота
+    // Если есть реальный приз (не "пусто") — добавляем в "Мои призы" и отправляем в бота
     if (!cfg.empty) {
       const now = new Date();
       const claimedItem = {
@@ -1455,13 +1513,21 @@
       }
       saveJson(STORAGE_KEY_CLAIMED, claimedPrizes);
 
-      // отправка в Telegram-бота
-      sendPrizeToBot(day, claimedItem);
+      // Отправляем в Telegram-бота
+      await sendPrizeToBot(day, claimedItem);
+    } else {
+      // Для дней без приза просто закрываем окно
+      closeModal();
+      showNotification("День открыт! 🎉");
     }
 
-    closeModal();
     buildCalendar();
     renderPrizesPage();
+    
+    // Если это день без приза, закрываем модалку
+    if (cfg.empty) {
+      closeModal();
+    }
   });
 
   btnLater.addEventListener("click", closeModal);
@@ -1559,64 +1625,45 @@
     });
   });
 
-  // ====== Интеграция с Telegram WebApp ======
-  function sendPrizeToBot(day, prize) {
-    const cfg = DAYS_CONFIG[day] || {};
-    const payload = {
-      type: "claim_prize",
-      day,
-      title: prize?.title || cfg.title,
-      desc: prize?.desc || cfg.desc || "",
-    };
-
-    // Реальная интеграция: бот получит JSON через WebApp
-    if (window.Telegram && window.Telegram.WebApp) {
-      try {
-        window.Telegram.WebApp.sendData(JSON.stringify(payload));
-        showNotification(`Приз дня ${day} отправлен в бота!`);
-      } catch (e) {
-        console.error("Ошибка отправки в Telegram WebApp:", e);
-        showNotification("Ошибка отправки. Попробуйте позже.");
-      }
-    } else {
-      // Демо-режим в обычном браузере
-      showNotification(
-        `DEMO: Приз "${cfg.title}" отправлен в бота!\n\n` +
-        `День ${day}: ${cfg.desc}`
-      );
-    }
-  }
-
+  // ====== Уведомления ======
   function showNotification(message) {
     // Создаем уведомление
     const notification = document.createElement('div');
+    notification.id = 'temp-notification';
     notification.style.cssText = `
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: linear-gradient(135deg, #0ea5e9, #3b82f6);
       color: white;
-      padding: 15px 20px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      max-width: 300px;
-      animation: slideIn 0.3s ease-out;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 20px 25px;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      z-index: 10000;
+      max-width: 350px;
+      text-align: center;
+      animation: fadeInScale 0.3s ease-out;
+      border: 2px solid rgba(255, 255, 255, 0.3);
       backdrop-filter: blur(10px);
+      font-family: inherit;
     `;
     
     notification.innerHTML = `
-      <div style="font-weight: 600; margin-bottom: 5px;">
-        <i class="fas fa-check-circle"></i> Успешно!
+      <div style="font-size: 20px; margin-bottom: 10px;">
+        <i class="fas fa-bell"></i>
       </div>
-      <div style="font-size: 13px;">${message}</div>
+      <div style="font-weight: 600; margin-bottom: 10px; font-size: 16px;">
+        Уведомление
+      </div>
+      <div style="font-size: 14px; line-height: 1.4;">${message}</div>
     `;
     
     document.body.appendChild(notification);
     
+    // Удаляем уведомление через 3 секунды
     setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease-out';
+      notification.style.animation = 'fadeOutScale 0.3s ease-out';
       setTimeout(() => notification.remove(), 300);
     }, 3000);
     
@@ -1625,28 +1672,53 @@
       const style = document.createElement('style');
       style.id = 'notification-styles';
       style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
-        @keyframes slideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
+        @keyframes fadeOutScale {
+          from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
         }
       `;
       document.head.appendChild(style);
     }
   }
 
-  // ====== Старт ======
-  createAnimatedBackground();
-  createSnowflakes();
-  updateDateInfo();
-  buildCalendar();
-  renderPrizesPage();
-  
-  // Обновляем информацию о дате каждый день
-  setInterval(updateDateInfo, 24 * 60 * 60 * 1000);
+  // ====== Инициализация при загрузке ======
+  document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, открыто ли в Telegram WebApp
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+      console.log('Telegram WebApp detected');
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+      
+      // Можно также изменить тему
+      Telegram.WebApp.setHeaderColor('#0b1a2a');
+      Telegram.WebApp.setBackgroundColor('#051016');
+    } else {
+      console.log('Running in browser mode');
+      // Показываем информацию о том, как получить призы
+      setTimeout(() => {
+        showNotification(
+          'Для получения призов:\n' +
+          '1. Откройте @MinamotoAdventBot в Telegram\n' +
+          '2. Нажмите "Открыть адвент-календарь"\n' +
+          '3. Забирайте призы через бота!'
+        );
+      }, 2000);
+    }
+    
+    // Остальная инициализация
+    createAnimatedBackground();
+    createSnowflakes();
+    updateDateInfo();
+    buildCalendar();
+    renderPrizesPage();
+    
+    // Обновляем информацию о дате каждый день
+    setInterval(updateDateInfo, 24 * 60 * 60 * 1000);
+  });
 </script>
 </body>
-</html> 
+</html>
