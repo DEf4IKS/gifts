@@ -1102,8 +1102,8 @@
 	const DAYS_COUNT = 31;
 	const CALENDAR_YEAR = new Date().getFullYear();
 	const CALENDAR_MONTH = 11; // декабрь, 0-индекс
-	const STORAGE_KEY_PROGRESS = "minamoto_advent_progress_v3";
-	const STORAGE_KEY_CLAIMED = "minamoto_advent_claimed_v3";
+	const STORAGE_KEY_PROGRESS = "minamoto_advent_progress_v4";
+	const STORAGE_KEY_CLAIMED = "minamoto_advent_claimed_v4";
 
 	// Конфиг по дням (index = номер дня)
 	const DAYS_CONFIG = {
@@ -1394,7 +1394,7 @@
 			} else if (isCompleted) {
 					modalBody.innerHTML =
 							`Ты уже открыл этот день. 🎉<br><div style="opacity:.9;font-size:14px;margin-top:10px;">Приз можно забрать во вкладке «Мои призы».</div>`;
-					btnClaim.innerHTML = isEmpty ? '<i class="fas fa-check"></i> Ок' : '<i class="fas fa-robot"></i> Ещё раз в бота';
+					btnClaim.innerHTML = isEmpty ? '<i class="fas fa-check"></i> Ок' : '<i class="fas fa-robot"></i> Получить приз';
 			} else {
 					if (isEmpty) {
 							modalBody.innerHTML =
@@ -1459,8 +1459,8 @@
 					}
 					saveJson(STORAGE_KEY_CLAIMED, claimedPrizes);
 					
-					// отправка в Telegram-бота (НОВЫЙ МЕТОД - без закрытия WebApp)
-					await sendPrizeToBotNew(day, claimedItem);
+					// Отправляем приз через WebApp
+					await sendPrizeViaWebApp(day, claimedItem);
 			} else {
 					// Для дней без приза просто закрываем окно
 					closeModal();
@@ -1528,7 +1528,7 @@
 					const btn = document.createElement("button");
 					btn.className = "prize-btn";
 					btn.innerHTML = '<i class="fas fa-robot"></i> Получить приз';
-					btn.addEventListener("click", () => sendPrizeToBotNew(prize.day, prize));
+					btn.addEventListener("click", () => sendPrizeViaWebApp(prize.day, prize));
 
 					main.appendChild(title);
 					if (prize.desc) {
@@ -1571,36 +1571,45 @@
 			});
 	});
 
-	// ====== НОВАЯ Функция отправки приза в бота (без закрытия WebApp) ======
-	async function sendPrizeToBotNew(day, prize) {
+	// ====== Отправка приза через WebApp ======
+	async function sendPrizeViaWebApp(day, prize) {
 			const cfg = DAYS_CONFIG[day] || {};
+			
+			// Формируем payload для бота
+			const payload = {
+					type: "claim_prize",
+					day: day,
+					title: prize?.title || cfg.title,
+					desc: prize?.desc || cfg.desc || "",
+					timestamp: Date.now()
+			};
 			
 			// Проверяем, открыт ли WebApp в Telegram
 			if (window.Telegram && window.Telegram.WebApp) {
 					try {
-							// Открываем ссылку на бота с параметром дня
-							const botUrl = `https://t.me/MinamotoAdventBot?start=advent_${day}`;
-							window.Telegram.WebApp.openLink(botUrl);
+							showNotification("Отправляю приз в бота...");
 							
-							// Не закрываем WebApp! Просто показываем уведомление
-							showNotification(`Открываю бота для получения приза дня ${day}...`);
+							// Отправляем данные через WebApp
+							Telegram.WebApp.sendData(JSON.stringify(payload));
+							
+							// ЗАМЕТКА: WebApp автоматически закроется после sendData
+							// Но мы можем показать сообщение перед закрытием
+							setTimeout(() => {
+									showNotification("Приз отправлен! Проверьте сообщение от бота в чате. 🎁");
+							}, 500);
 							
 					} catch (e) {
-							console.error("Ошибка отправки в Telegram:", e);
-							showNotification("Ошибка. Откройте бота вручную: @MinamotoAdventBot");
+							console.error("Ошибка отправки в Telegram WebApp:", e);
+							showNotification("Ошибка отправки. Попробуйте позже.");
 					}
 			} else {
 					// Если открыто не в Telegram (в браузере)
 					showNotification(
 							`Приз "${cfg.title}" доступен!\n\n` +
-							`Для получения откройте:\n` +
-							`https://t.me/MinamotoAdventBot?start=advent_${day}`
+							`Для получения откройте бота:\n` +
+							`https://t.me/MinamotoAdventBot\n` +
+							`и нажмите "Мои призы"`
 					);
-					
-					// Показываем кнопку для открытия бота
-					if (confirm('Открыть Telegram для получения приза?')) {
-							window.open(`https://t.me/MinamotoAdventBot?start=advent_${day}`, '_blank');
-					}
 			}
 	}
 
@@ -1667,13 +1676,19 @@
 	document.addEventListener('DOMContentLoaded', function() {
 			// Инициализация Telegram WebApp
 			if (window.Telegram && window.Telegram.WebApp) {
-					window.Telegram.WebApp.ready();
-					window.Telegram.WebApp.expand(); // Разворачиваем на весь экран
-					
-					// Настраиваем внешний вид
-					window.Telegram.WebApp.setHeaderColor('#0b1a2a');
-					window.Telegram.WebApp.setBackgroundColor('#051016');
-					window.Telegram.WebApp.enableClosingConfirmation();
+					try {
+							Telegram.WebApp.ready();
+							Telegram.WebApp.expand(); // Разворачиваем на весь экран
+							
+							// Настраиваем внешний вид
+							Telegram.WebApp.setHeaderColor('#0b1a2a');
+							Telegram.WebApp.setBackgroundColor('#051016');
+							Telegram.WebApp.enableClosingConfirmation();
+							
+							console.log("Telegram WebApp initialized");
+					} catch (e) {
+							console.error("Error initializing Telegram WebApp:", e);
+					}
 			}
 			
 			createAnimatedBackground();
